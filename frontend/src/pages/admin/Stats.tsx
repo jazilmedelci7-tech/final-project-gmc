@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { listRappels, todayLocal } from '../../data'
+import { ageFrom, listRappels, todayLocal } from '../../data'
 import { cabinetNom } from '../../cabinets'
 import { useStore } from '../../store'
 import { ErrorBox } from '../../ui'
@@ -77,9 +77,12 @@ export default function Stats() {
     const motifs = top(visites.flatMap((v) => v.motifs), 6)
     const vaccins = top(visites.flatMap((v) => v.vaccins), 6)
     const cab = top(rdvs.map((r) => cabinetNom(r.cabinet) || r.cabinet), 6)
+    const tranches = [['Moins d\'1 an', 0, 1], ['1 à 3 ans', 1, 4], ['4 à 7 ans', 4, 8], ['8 ans et plus', 8, 100]] as const
+    const ans = fiches.map((f) => (f.naissance ? ageFrom(f.naissance) : '')).filter(Boolean).map((a) => { const m = /^(\d+) an/.exec(a); return m ? Number(m[1]) : 0 })
+    const ages: [string, number][] = tranches.map(([l, a, b]) => [l, ans.filter((n) => n >= a && n < b).length] as [string, number]).filter((r) => r[1] > 0)
     const retard = listRappels(fiches, 30).filter((r) => r.etat === 'late').length
     const aVenir = listRappels(fiches, 30).filter((r) => r.etat !== 'late').length
-    return { visitesParMois, rdvParMois, nouvellesFiches, rdv30, conf, ref, nouv, especes, motifs, vaccins, cab, retard, aVenir, nbVisites: visites.length }
+    return { visitesParMois, rdvParMois, nouvellesFiches, rdv30, conf, ref, nouv, especes, motifs, vaccins, cab, ages, retard, aVenir, nbVisites: visites.length }
   }, [fiches, rdvs])
   if (loading) return <p className="text-brand-muted">Chargement…</p>
   if (error) return <ErrorBox message={error} onRetry={reload} />
@@ -105,6 +108,7 @@ export default function Stats() {
         <Rows title="Espèces suivies" rows={s.especes} empty="Pas encore de fiche." />
         <Rows title="Motifs de visite les plus fréquents" rows={s.motifs} empty="Pas encore de visite." />
         <Rows title="Vaccins les plus faits" rows={s.vaccins} empty="Pas encore de vaccin enregistré." />
+        <Rows title="Âge des animaux" rows={s.ages} empty="Renseigne la date de naissance dans les fiches." />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -4,7 +4,7 @@ export interface Visite { id: string; date: string; motifs: string[]; vaccins: s
 export interface Fiche {
   id: string; nom: string; prenom: string; age: string; telephone: string; adresse: string
   animal: string; espece: string; precision: string; race: string; sexe: string; sterilise: string
-  ageAnimal: string; poids: string; robe: string; puce: string; tatouage: string
+  ageAnimal: string; naissance: string; poids: string; robe: string; puce: string; tatouage: string
   antecedents: string[]; antecedentsNote: string; images: FicheImage[]; visites: Visite[]; createdAt?: string
 }
 export interface Rdv {
@@ -63,3 +63,19 @@ export function listRappels(fiches: Fiche[], maxJours = 30): RappelItem[] {
   }
   return out.sort((a, b) => a.jours - b.jours)
 }
+
+/** Âge calculé depuis la date de naissance (AAAA-MM-JJ) : il change tout seul chaque jour. « 2 ans 3 mois », « 5 mois 12 j », « 9 jours »… */
+export function ageFrom(naissance: string, today = todayLocal()): string {
+  const a = /^(\d{4})-(\d{2})-(\d{2})$/.exec(naissance), b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(today)
+  if (!a || !b || naissance > today) return ''
+  let y = +b[1] - +a[1], m = +b[2] - +a[2], dd = +b[3] - +a[3]
+  if (dd < 0) { m--; dd += new Date(Date.UTC(+b[1], +b[2] - 1, 0)).getUTCDate() } // jours du mois précédent
+  if (m < 0) { y--; m += 12 }
+  if (y >= 1) return `${y} an${y > 1 ? 's' : ''}${m ? ` ${m} mois` : ''}`
+  if (m >= 1) return `${m} mois${dd ? ` ${dd} j` : ''}`
+  const jours = Math.round((Date.UTC(+b[1], +b[2] - 1, +b[3]) - Date.UTC(+a[1], +a[2] - 1, +a[3])) / 86400000)
+  return jours <= 1 ? `${jours} jour` : `${jours} jours`
+}
+
+/** Âge à afficher pour une fiche : calculé depuis la naissance si elle est connue, sinon l'ancien texte saisi à la main. */
+export const ageAnimalLabel = (f: Pick<Fiche, 'naissance' | 'ageAnimal'>) => (f.naissance ? ageFrom(f.naissance) : f.ageAnimal) || ''

@@ -47,6 +47,7 @@ const ficheSchema = new Schema(
     sexe: { type: String, default: '' },
     sterilise: { type: String, default: '' },
     ageAnimal: { type: String, default: '' },
+    naissance: { type: String, default: '' },
     poids: { type: String, default: '' },
     robe: { type: String, default: '' },
     puce: { type: String, default: '' },

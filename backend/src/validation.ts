@@ -35,6 +35,7 @@ export const ficheSchema = z.object({
   sexe: str(10),
   sterilise: str(10),
   ageAnimal: str(30),
+  naissance: day,
   poids: str(10),
   robe: str(60),
   puce: str(25),
