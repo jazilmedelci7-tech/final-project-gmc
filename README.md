@@ -40,6 +40,15 @@ Ouvre http://localhost:5173/admin : à la première visite, le vétérinaire cr�
 
 Détail dans `VENDRE.md` : un *Web Service* pour `backend`, un *Static Site* pour `frontend` avec la réécriture `/api/*` vers le back.
 
+## Comptes clients
+
+Un client peut créer un compte (`/compte/connexion`), puis renseigner ses informations et celles de ses animaux (`/compte`). Quand il est connecté, le formulaire de rendez-vous se remplit tout seul et la demande est liée à son compte.
+
+- Compte client et espace du vétérinaire sont séparés : deux cookies différents (`client_session` / `vet_session`), le client n'a jamais accès aux fiches.
+- Un client ne voit et ne modifie que ses propres animaux ; il peut changer son mot de passe et supprimer son compte.
+- Le vétérinaire voit les comptes dans « Comptes clients » (`/admin/clients`).
+- Les comptes sont inclus dans les sauvegardes (`/export`, sauvegarde Telegram) et dans `npm run restore`.
+
 ## Sécurité et données
 
 Mot de passe haché (bcrypt), session par cookie httpOnly, limitation des tentatives, validation de toutes les entrées (zod), vérification du type réel des images, sauvegardes (fichier + envoi hebdomadaire sur Telegram).

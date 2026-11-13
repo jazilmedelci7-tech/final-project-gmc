@@ -33,7 +33,26 @@ export type FicheInput = Omit<Fiche, 'id' | 'images'>
 export interface ImageMeta { type: string; legende: string; date: string }
 export interface RdvInput { nom: string; telephone: string; animal: string; cabinet: string; date: string; message: string; website?: string }
 
+export interface ClientCompte { id: string; email: string; nom: string; prenom: string; telephone: string; adresse: string }
+export interface AnimalCompte { id: string; nom: string; espece: string; race: string; sexe: string; sterilise: string; naissance: string; poids: string; robe: string; puce: string; tatouage: string; notes: string }
+export type AnimalCompteInput = Omit<AnimalCompte, 'id'>
+export type InscriptionInput = Omit<ClientCompte, 'id'> & { password: string }
+export interface ClientAdmin extends ClientCompte { animaux: AnimalCompte[]; nbRendezVous: number; createdAt: string }
+
 export const api = {
+  compteSession: () => request<{ client: ClientCompte | null }>('GET', '/compte/session'),
+  compteInscription: (d: InscriptionInput) => request<{ client: ClientCompte }>('POST', '/compte/inscription', d),
+  compteConnexion: (email: string, password: string) => request<{ client: ClientCompte }>('POST', '/compte/connexion', { email, password }),
+  compteDeconnexion: () => request<{ ok: true }>('POST', '/compte/deconnexion'),
+  compteModifier: (d: Omit<ClientCompte, 'id' | 'email'>) => request<{ client: ClientCompte }>('PUT', '/compte/moi', d),
+  compteMotDePasse: (current: string, password: string) => request<{ ok: true }>('PUT', '/compte/mot-de-passe', { current, password }),
+  compteSupprimer: (password: string) => request<{ ok: true }>('DELETE', '/compte/moi', { password }),
+  animaux: () => request<AnimalCompte[]>('GET', '/compte/animaux'),
+  createAnimal: (a: AnimalCompteInput) => request<AnimalCompte>('POST', '/compte/animaux', a),
+  updateAnimal: (id: string, a: AnimalCompteInput) => request<AnimalCompte>('PUT', `/compte/animaux/${id}`, a),
+  deleteAnimal: (id: string) => request<void>('DELETE', `/compte/animaux/${id}`),
+  mesRdvs: () => request<Rdv[]>('GET', '/compte/rendez-vous'),
+  clientsAdmin: () => request<ClientAdmin[]>('GET', '/clients'),
   me: () => request<{ ok: true }>('GET', '/auth/me'),
   login: (password: string) => request<{ ok: true }>('POST', '/auth/login', { password }),
   logout: () => request<{ ok: true }>('POST', '/auth/logout'),

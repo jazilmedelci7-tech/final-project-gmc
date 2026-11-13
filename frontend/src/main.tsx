@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { ToastProvider } from './ui'
+import { ClientProvider } from './clientAuth'
 import { palette, site } from './site'
 import './index.css'
 
@@ -11,5 +12,5 @@ for (const [k, v] of Object.entries(palette(site.couleur))) document.documentEle
 document.title = site.titre
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><BrowserRouter><ToastProvider><App /></ToastProvider></BrowserRouter></React.StrictMode>
+  <React.StrictMode><BrowserRouter><ToastProvider><ClientProvider><App /></ClientProvider></ToastProvider></BrowserRouter></React.StrictMode>
 )

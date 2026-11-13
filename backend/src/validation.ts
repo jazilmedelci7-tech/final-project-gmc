@@ -74,3 +74,30 @@ export const imageMetaSchema = z.object({
   date: day,
 })
 export const imagePatchSchema = z.object({ type: z.enum(IMAGE_TYPES).optional(), legende: z.string().trim().max(200).optional(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date invalide').or(z.literal('')).optional() })
+
+/* ---------- Comptes clients ---------- */
+const email = z.string({ required_error: "L'adresse e-mail est obligatoire", invalid_type_error: "L'adresse e-mail est obligatoire" }).trim().toLowerCase().email('Adresse e-mail invalide').max(120)
+export const clientRegisterSchema = z.object({
+  email,
+  password: passwordPolicy,
+  nom: required('Le nom est obligatoire', 80),
+  prenom: str(80),
+  telephone: required('Numéro de téléphone invalide', 30, 5),
+  adresse: str(200),
+})
+export const clientLoginSchema = z.object({ email: z.string().trim().toLowerCase().max(120), password: z.string().min(1).max(200) })
+export const clientProfileSchema = z.object({ nom: required('Le nom est obligatoire', 80), prenom: str(80), telephone: required('Numéro de téléphone invalide', 30, 5), adresse: str(200) })
+export const clientDeleteSchema = z.object({ password: z.string().min(1).max(200) })
+export const animalClientSchema = z.object({
+  nom: required("Le nom de l'animal est obligatoire", 80),
+  espece: str(40),
+  race: str(80),
+  sexe: str(10),
+  sterilise: str(10),
+  naissance: day.refine((d) => d <= new Date().toISOString().slice(0, 10), 'La date de naissance ne peut pas être dans le futur'),
+  poids: str(10),
+  robe: str(60),
+  puce: str(25),
+  tatouage: str(25),
+  notes: str(1000),
+})

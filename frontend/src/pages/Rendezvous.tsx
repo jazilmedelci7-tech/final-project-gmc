@@ -1,7 +1,8 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PageHero } from '../components/Layout'
-import { api, errMsg } from '../api'
+import { AnimalCompte, api, errMsg } from '../api'
+import { useClient } from '../clientAuth'
 import { cabinets, telHref } from '../cabinets'
 import { todayLocal } from '../data'
 import { services } from '../services'
@@ -12,18 +13,26 @@ const empty = { nom: '', telephone: '', animal: '', cabinet: '', date: '', motif
 
 export default function Rendezvous() {
   const [params] = useSearchParams()
+  const { client } = useClient()
+  const [mesAnimaux, setMesAnimaux] = useState<AnimalCompte[]>([])
   const fromService = services.find((s) => slug(s.title) === params.get('service'))?.title ?? ''
   const [sent, setSent] = useState(false)
   const [f, setF] = useState({ ...empty, motif: fromService })
   const [trap, setTrap] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  // Client connecté : on remplit son nom et son téléphone, et on propose ses animaux
+  useEffect(() => {
+    if (!client) { setMesAnimaux([]); return }
+    setF((x) => ({ ...x, nom: x.nom || `${client.prenom} ${client.nom}`.trim(), telephone: x.telephone || client.telephone }))
+    api.animaux().then(setMesAnimaux).catch(() => setMesAnimaux([]))
+  }, [client])
   const set = (k: keyof typeof empty) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setErr('')
     const { motif, message, ...rest } = f
     const texte = [motif && `Motif : ${motif}`, message].filter(Boolean).join('\n')
-    try { await api.createRdv({ ...rest, message: texte, cabinet: f.cabinet || cabinets[0].id, website: trap }); setF(empty); setSent(true) } catch (error) { setErr(errMsg(error)) } finally { setBusy(false) }
+    try { await api.createRdv({ ...rest, message: texte, cabinet: f.cabinet || cabinets[0].id, website: trap }); setF(client ? { ...empty, nom: `${client.prenom} ${client.nom}`.trim(), telephone: client.telephone } : empty); setSent(true) } catch (error) { setErr(errMsg(error)) } finally { setBusy(false) }
   }
   const fields = [['nom', 'Votre nom', 'text'], ['telephone', 'Téléphone', 'tel'], ['animal', 'Nom de l\'animal', 'text']] as const
   return (
@@ -38,7 +47,9 @@ export default function Rendezvous() {
           </div>
         ) : (
           <Reveal><form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-            {fields.map(([id, label, type]) => <div key={id}><label className="label" htmlFor={id}>{label}</label><input id={id} type={type} className="input" required value={f[id]} onChange={set(id)} /></div>)}
+            <datalist id="mes-animaux">{mesAnimaux.map((a) => <option key={a.id} value={a.nom} />)}</datalist>
+            {!client && <p className="text-sm text-brand-muted sm:col-span-2">Vous avez un compte ? <Link to="/compte/connexion?retour=rdv" className="font-bold text-brand hover:underline">Connectez-vous</Link> pour remplir plus vite.</p>}
+            {fields.map(([id, label, type]) => <div key={id}><label className="label" htmlFor={id}>{label}</label><input id={id} type={type} className="input" required value={f[id]} onChange={set(id)} list={id === 'animal' ? 'mes-animaux' : undefined} /></div>)}
             <div><label className="label" htmlFor="date">Jour souhaité</label><input id="date" type="date" min={todayLocal()} className="input" required value={f.date} onChange={set('date')} /></div>
             <div className="sm:col-span-2"><label className="label" htmlFor="motif">Pour quel soin ?</label>
               <select id="motif" className="input" value={f.motif} onChange={set('motif')}>

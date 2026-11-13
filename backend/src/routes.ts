@@ -6,12 +6,16 @@ import express, { Router, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import type { z } from 'zod'
 import { config } from './config.js'
-import { endSession, isAuthenticated, requireAuth, startSession } from './auth.js'
-import { Admin, Fiche, ImageData, Rdv, Setting } from './models.js'
-import { clearTelegram, detectChatId, envoyerSauvegarde, saveTelegram, sendTelegram, telegramConf } from './notify.js'
+import { clientIdFrom, endSession, isAuthenticated, requireAuth, startSession } from './auth.js'
+import { comptes } from './comptes.js'
+import { Admin, AnimalClient, Client, Fiche, ImageData, Rdv, Setting } from './models.js'
+import { clearTelegram, construireSauvegarde, detectChatId, envoyerSauvegarde, saveTelegram, sendTelegram, telegramConf } from './notify.js'
 import { changePasswordSchema, ficheSchema, imageMetaSchema, imagePatchSchema, loginSchema, rdvCreateSchema, rdvStatutSchema, setupSchema, telegramDetectSchema, telegramSchema } from './validation.js'
 
 export const router = Router()
+
+// Espace des clients (compte, animaux, rendez-vous) : /api/compte/...
+router.use('/compte', comptes)
 
 const limitMsg = (error: string) => ({ error })
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false, message: limitMsg('Trop de tentatives. Réessaie dans quelques minutes.') })
@@ -68,7 +72,8 @@ router.post('/rdv', rdvLimiter, async (req, res) => {
   if (!data) return
   if (data.website) { res.status(201).json({ ok: true }); return } // robot : on fait semblant sans rien enregistrer
   const { website: _ignored, ...rdv } = data
-  await Rdv.create(rdv)
+  // Si le client est connecté à son compte, la demande y est rattachée
+  await Rdv.create({ ...rdv, client: clientIdFrom(req) })
   res.status(201).json({ ok: true })
   // Prévient le vétérinaire sur Telegram (sans bloquer ni faire échouer la demande du client)
   void (async () => {
@@ -86,6 +91,18 @@ router.post('/rdv', rdvLimiter, async (req, res) => {
 
 /* ---------- Tout le reste : réservé au vétérinaire ---------- */
 router.use(requireAuth)
+
+/* ---------- Comptes clients, vus par le vétérinaire (lecture seule) ---------- */
+router.get('/clients', async (_req, res) => {
+  const [clients, animaux, rdvs] = await Promise.all([
+    Client.find().sort({ createdAt: -1 }).limit(1000),
+    AnimalClient.find().sort({ createdAt: 1 }).limit(5000),
+    Rdv.find({ client: { $ne: null } }).select('client').limit(5000),
+  ])
+  const nbRdv = new Map<string, number>()
+  for (const x of rdvs) { const k = String(x.client); nbRdv.set(k, (nbRdv.get(k) ?? 0) + 1) }
+  res.json(clients.map((c) => ({ ...c.toJSON(), animaux: animaux.filter((a) => String(a.owner) === String(c._id)).map((a) => a.toJSON()), nbRendezVous: nbRdv.get(String(c._id)) ?? 0 })))
+})
 
 // Changer son mot de passe (il faut connaître l'ancien)
 router.post('/auth/change-password', loginLimiter, async (req: Request, res: Response) => {
@@ -263,11 +280,10 @@ router.delete('/notifications', async (_req, res) => { await clearTelegram(); re
 
 /* ---------- Sauvegarde ---------- */
 router.get('/export', async (_req, res) => {
-  const [fiches, rdvs] = await Promise.all([Fiche.find().sort({ createdAt: 1 }), Rdv.find().sort({ createdAt: 1 })])
-  const now = new Date().toISOString()
-  res.setHeader('Content-Disposition', `attachment; filename="sauvegarde-veto-${now.slice(0, 10)}.json"`)
-  await Setting.updateOne({ key: 'lastBackup' }, { $set: { value: now } }, { upsert: true })
-  res.json({ exportedAt: now, fiches, rdvs })
+  const data = await construireSauvegarde()
+  res.setHeader('Content-Disposition', `attachment; filename="sauvegarde-veto-${data.exportedAt.slice(0, 10)}.json"`)
+  await Setting.updateOne({ key: 'lastBackup' }, { $set: { value: data.exportedAt } }, { upsert: true })
+  res.json(data)
 })
 
 // Sauvegarde des images : un fichier texte, une image par ligne (lu en continu pour ne pas saturer la mémoire)

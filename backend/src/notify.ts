@@ -1,5 +1,5 @@
 import { config } from './config.js'
-import { Fiche, Rdv, Setting } from './models.js'
+import { AnimalClient, Client, Fiche, Rdv, Setting } from './models.js'
 
 const two = (n: number) => String(n).padStart(2, '0')
 const localDay = (d = new Date()) => `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`
@@ -69,16 +69,27 @@ export async function sendTelegramFile(filename: string, content: Buffer, captio
   }
 }
 
-/** Envoie la sauvegarde des fiches et rendez-vous (sans les radios) dans Telegram. */
+/** Contenu d'une sauvegarde : fiches, rendez-vous, comptes clients et leurs animaux (sans les radios). */
+export async function construireSauvegarde() {
+  const [fiches, rdvs, clients, animauxClients] = await Promise.all([
+    Fiche.find().sort({ createdAt: 1 }),
+    Rdv.find().sort({ createdAt: 1 }),
+    Client.find().sort({ createdAt: 1 }).lean(), // « lean » garde le mot de passe haché : sans lui, les clients devraient refaire leur compte
+    AnimalClient.find().sort({ createdAt: 1 }),
+  ])
+  return { exportedAt: new Date().toISOString(), fiches, rdvs, clients, animauxClients }
+}
+
+/** Envoie la sauvegarde dans Telegram. */
 export async function envoyerSauvegarde(): Promise<void> {
-  const [fiches, rdvs] = await Promise.all([Fiche.find().sort({ createdAt: 1 }), Rdv.find().sort({ createdAt: 1 })])
-  const now = new Date().toISOString()
-  const buf = Buffer.from(JSON.stringify({ exportedAt: now, fiches, rdvs }))
+  const data = await construireSauvegarde()
+  const now = data.exportedAt
+  const buf = Buffer.from(JSON.stringify(data))
   if (buf.length > 45 * 1024 * 1024) {
     await sendTelegram("Sauvegarde automatique impossible : le fichier est trop gros pour Telegram. Télécharge-la à la main (boutons « Sauvegarde » du site).")
     return
   }
-  await sendTelegramFile(`sauvegarde-veto-${now.slice(0, 10)}.json`, buf, `Sauvegarde automatique du ${fr(now.slice(0, 10))} : ${fiches.length} fiche(s). Garde ce fichier (ne le partage pas : il contient les données des clients). Les radios se sauvegardent à part, avec le bouton « Sauvegarde radios » du site.`)
+  await sendTelegramFile(`sauvegarde-veto-${now.slice(0, 10)}.json`, buf, `Sauvegarde automatique du ${fr(now.slice(0, 10))} : ${data.fiches.length} fiche(s), ${data.clients.length} compte(s) client. Garde ce fichier (ne le partage pas : il contient les données des clients). Les radios se sauvegardent à part, avec le bouton « Sauvegarde radios » du site.`)
   await setSetting('backupTgLast', now)
 }
 

@@ -6,6 +6,7 @@ import { cabinets, telHref } from '../cabinets'
 import { site } from '../site'
 import { listRappels } from '../data'
 import { ErrorBox, Reveal } from '../ui'
+import { useClient } from '../clientAuth'
 
 export function Logo({ variant = 'white', className = '' }: { variant?: 'white' | 'blue'; className?: string }) {
   return <img src={`/logo-${variant}.png`} alt={`Logo ${site.nom}`} className={className} />
@@ -32,6 +33,7 @@ export function ScrollTop() {
 const links: [string, string][] = [['/', 'Accueil'], ['/services', 'Services'], ['/contact', 'Contact']]
 
 export function Header() {
+  const { client } = useClient()
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
   useEffect(() => setOpen(false), [pathname])
@@ -43,6 +45,7 @@ export function Header() {
         {links.map(([to, label]) => (
           <NavLink key={to} to={to} end className={({ isActive }) => `border-b-2 pb-1 transition-colors ${isActive ? 'border-white font-extrabold' : 'border-transparent hover:border-white/60'}`}>{label}</NavLink>
         ))}
+        <NavLink to={client ? '/compte' : '/compte/connexion'} className={({ isActive }) => `border-b-2 pb-1 transition-colors ${isActive ? 'border-white font-extrabold' : 'border-transparent hover:border-white/60'}`}>{client ? 'Mon compte' : 'Connexion'}</NavLink>
         <Link to="/rendez-vous" className="btn btn-white text-center">Prendre rendez-vous</Link>
       </nav>
     </header>
@@ -158,6 +161,7 @@ function AdminShell() {
           <NavLink to="/admin" end className={item}>Fiches clients</NavLink>
           <NavLink to="/admin/rendez-vous" className={item}>Rendez-vous{nouvelles > 0 && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand">{nouvelles}</span>}</NavLink>
           <NavLink to="/admin/rappels" className={item}>Rappels{rappelsUrgents > 0 && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand">{rappelsUrgents}</span>}</NavLink>
+          <NavLink to="/admin/clients" className={item}>Comptes clients</NavLink>
           <NavLink to="/admin/statistiques" className={item}>Statistiques</NavLink>
           <NavLink to="/admin/sauvegardes" className={item}>Sauvegardes</NavLink>
         </nav>

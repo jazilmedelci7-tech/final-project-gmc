@@ -15,6 +15,9 @@ import Rendezvous from './pages/Rendezvous'
 import ServiceDetail from './pages/ServiceDetail'
 import Stats from './pages/admin/Stats'
 import Sauvegardes from './pages/admin/Sauvegardes'
+import Clients from './pages/admin/Clients'
+import Compte from './pages/Compte'
+import CompteLogin from './pages/CompteLogin'
 
 export default function App() {
   return (
@@ -27,6 +30,8 @@ export default function App() {
           <Route path="/services/:id" element={<ServiceDetail />} />
           <Route path="/rendez-vous" element={<Rendezvous />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/compte" element={<Compte />} />
+          <Route path="/compte/connexion" element={<CompteLogin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
         <Route path="/admin/login" element={<Login />} />
@@ -37,6 +42,7 @@ export default function App() {
           <Route path="fiches/:id/modifier" element={<FichePage />} />
           <Route path="rendez-vous" element={<Rdvs />} />
           <Route path="rappels" element={<Rappels />} />
+          <Route path="clients" element={<Clients />} />
           <Route path="statistiques" element={<Stats />} />
           <Route path="sauvegardes" element={<Sauvegardes />} />
           <Route path="notifications" element={<Notifications />} />

@@ -72,6 +72,7 @@ const rdvSchema = new Schema(
     date: { type: String, default: '' },
     message: { type: String, default: '' },
     statut: { type: String, enum: ['nouvelle', 'confirmée', 'refusée'], default: 'nouvelle' },
+    client: { type: Schema.Types.ObjectId, ref: 'Client', default: null, index: true }, // compte du client, s'il était connecté
   },
   { timestamps: true, toJSON },
 )
@@ -83,8 +84,43 @@ const settingSchema = new Schema({ key: { type: String, unique: true, required: 
 // Images stockées dans la base (le disque de l'hébergeur gratuit est effacé à chaque redémarrage). _id = nom de fichier.
 const imageDataSchema = new Schema({ _id: { type: String, required: true }, mime: { type: String, required: true }, data: { type: Buffer, required: true } }, { timestamps: true })
 
+// Comptes des clients du cabinet (distincts du compte unique du vétérinaire)
+const clientSchema = new Schema(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    nom: { type: String, required: true },
+    prenom: { type: String, default: '' },
+    telephone: { type: String, required: true },
+    adresse: { type: String, default: '' },
+  },
+  {
+    timestamps: true,
+    toJSON: { versionKey: false, transform(_d: unknown, ret: Record<string, unknown>) { ret.id = String(ret._id); delete ret._id; delete ret.passwordHash; return ret } },
+  },
+)
+const animalClientSchema = new Schema(
+  {
+    owner: { type: Schema.Types.ObjectId, ref: 'Client', required: true, index: true },
+    nom: { type: String, required: true },
+    espece: { type: String, default: '' },
+    race: { type: String, default: '' },
+    sexe: { type: String, default: '' },
+    sterilise: { type: String, default: '' },
+    naissance: { type: String, default: '' },
+    poids: { type: String, default: '' },
+    robe: { type: String, default: '' },
+    puce: { type: String, default: '' },
+    tatouage: { type: String, default: '' },
+    notes: { type: String, default: '' },
+  },
+  { timestamps: true, toJSON },
+)
+
 export const Fiche = mongoose.model('Fiche', ficheSchema)
 export const ImageData = mongoose.model('ImageData', imageDataSchema)
 export const Rdv = mongoose.model('Rdv', rdvSchema)
 export const Admin = mongoose.model('Admin', adminSchema)
 export const Setting = mongoose.model('Setting', settingSchema)
+export const Client = mongoose.model('Client', clientSchema)
+export const AnimalClient = mongoose.model('AnimalClient', animalClientSchema)
