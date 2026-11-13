@@ -129,14 +129,14 @@ function AccountMenu() {
   const quit = async () => { try { await api.logout() } catch { /* déjà déconnecté */ } nav('/admin/login') }
   const row = 'block w-full px-4 py-2.5 text-left text-[15px] text-brand-dark hover:bg-brand-light'
   return (
-    <div ref={box} className="relative">
-      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition-colors hover:bg-white/10">
+    <div ref={box} className="relative ml-auto w-fit">
+      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} className="flex items-center gap-3 rounded-lg border border-brand-line bg-brand p-1.5 pr-3 text-left text-white transition-colors hover:bg-brand-dark">
         <Logo className="h-10 md:h-11" />
         <span className="min-w-0 flex-1 leading-tight"><strong className="block">{site.nom}</strong><span className="text-[12px] opacity-80">Espace vétérinaire</span></span>
         <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 8l5 5 5-5" /></svg>
       </button>
       {open && (
-        <div role="menu" className="absolute left-0 right-0 z-50 mt-2 animate-drop overflow-hidden rounded-lg border border-brand-line bg-white py-1 shadow-xl md:right-auto md:w-56">
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-56 animate-drop overflow-hidden rounded-lg border border-brand-line bg-white py-1 shadow-xl">
           <Link role="menuitem" to="/" className={row}>Voir le site</Link>
           <Link role="menuitem" to="/admin/notifications" className={row}>Notifications</Link>
           <Link role="menuitem" to="/admin/mot-de-passe" className={row}>Mot de passe</Link>
@@ -156,8 +156,7 @@ function AdminShell() {
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_1fr]">
       <aside className="relative z-30 bg-brand p-4 text-white md:sticky md:top-0 md:h-screen md:p-5">
-        <AccountMenu />
-        <nav className="mt-4 flex flex-wrap gap-1.5 text-[15px] md:mt-8 md:flex-col md:flex-nowrap">
+        <nav className="flex flex-wrap gap-1.5 text-[15px] md:mt-4 md:flex-col md:flex-nowrap">
           <NavLink to="/admin" end className={item}>Fiches clients</NavLink>
           <NavLink to="/admin/rendez-vous" className={item}>Rendez-vous{nouvelles > 0 && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand">{nouvelles}</span>}</NavLink>
           <NavLink to="/admin/rappels" className={item}>Rappels{rappelsUrgents > 0 && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-brand">{rappelsUrgents}</span>}</NavLink>
@@ -166,7 +165,7 @@ function AdminShell() {
           <NavLink to="/admin/sauvegardes" className={item}>Sauvegardes</NavLink>
         </nav>
       </aside>
-      <main className="min-w-0 p-4 md:p-10"><Outlet /></main>
+      <main className="min-w-0 p-4 md:p-10"><div className="mb-6 flex"><AccountMenu /></div><Outlet /></main>
     </div>
   )
 }

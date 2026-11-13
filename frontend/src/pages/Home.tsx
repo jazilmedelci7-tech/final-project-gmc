@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Cta, Logo } from '../components/Layout'
-import { CabinetCard } from '../components/CabinetCard'
+import { CabinetCard, CabinetMap } from '../components/CabinetCard'
 import { cabinets } from '../cabinets'
 import { services } from '../services'
 import { site } from '../site'
@@ -70,6 +70,13 @@ export default function Home() {
           ))}
         </ol>
       </div></section>
+
+      <section className="wrap pb-14 md:pb-20">
+        <Reveal><h2 className="mb-8 text-3xl font-extrabold md:text-4xl">Où nous trouver</h2></Reveal>
+        <div className={`grid gap-6 ${cabinets.length > 1 ? 'md:grid-cols-2' : ''}`}>
+          {cabinets.map((c) => <Reveal key={c.id}><h3 className="mb-2 font-extrabold text-brand">{c.nom}</h3><CabinetMap c={c} /></Reveal>)}
+        </div>
+      </section>
 
       {site.avis.length > 0 && (
         <section className="wrap py-14 md:py-20">
