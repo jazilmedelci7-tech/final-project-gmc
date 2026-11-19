@@ -6,7 +6,7 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  CLIENT = "cabinet-belcourt"
+  CLIENT = "modele"
 
 [[redirects]]
   from = "/api/*"
