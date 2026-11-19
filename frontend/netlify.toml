@@ -1,0 +1,20 @@
+# Réglages Netlify pour le site (front).
+# Le back est hébergé à part sur Render : les appels /api/* lui sont transmis.
+[build]
+  command = "npm install --include=dev && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  CLIENT = "cabinet-belcourt"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://final-project-back-9eda.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
